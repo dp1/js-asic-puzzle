@@ -1,0 +1,6 @@
+[submodule "asic-puzzle-2026"]
+	path = asic-puzzle-2026
+	url = https://github.com/janestreet/asic-puzzle-2026
+[submodule "skywater-pdk-libs-sky130_fd_sc_hd"]
+	path = skywater-pdk-libs-sky130_fd_sc_hd
+	url = https://github.com/google/skywater-pdk-libs-sky130_fd_sc_hd
