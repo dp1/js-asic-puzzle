@@ -1,0 +1,81 @@
+tl;dr: recover cell definitions and wiring, convert to a (big) set of z3 equations, and solve for the flag.
+I used tinytapeout's 3d viewer and klayout for exploration, and a lot of python for the rest (including
+python-gdsii, shapely, and z3 libraries). Minimal AI, only to write a visualizer of my recovered polygons.
+
+
+I started by opening the gds in tinytapeout's online viewer (and later klayout).
+From there I noticed the standard cells were named, all starting with sky130_fd_sc_hd__,
+revealing the pdk in use. The pdk is open source, so I cloned the repo, and got layer definitions
+from https://skywater-pdk.readthedocs.io/en/main/rules/layers.html.
+
+I tried to parse out the pin location of each standard cell from the provided gds files in the
+sky130 repo, but realized that the pin markers (type 16) were only square markers, while the
+actual pins are metal regions with various shapes. So I switched to parsing the .lef files, which
+have a complete description of the pin shapes and name.
+
+With this information I started rebuilding "regions" from the puzzle, which I defined as (multilayer)
+interconnected regions carrying a single signal. On each layer, the region has zero or more polygons, with
+the guarantee that they are all somehow connected. I converted each path, via and boundary in the top level
+structure, and each cell pin, to a region. Vias end up as two polygons in different layers, connected as
+a single region. Then I merged all regions that touched each other to get complete wiring information.
+
+From there, I converted the merged regions into a graph where each node is a standard cell and each edge
+a region. In the graph, I collapsed the clock tree (removing all clockbufs) so all CLK inputs came straight
+from the top level pin. Probably not needed, but made for a slightly simpler setup.
+
+Most interesting step was converting the graph to a set of z3 equations. I assigned one boolean variable
+to the output of each cell, and imposed that it was equal to some function of its inputs, which of course
+came from the cell definition. To handle memory cells, I "time unrolled" the circuit, creating a new copy of
+each variable and equation for each timestep. Outputs of combinatorial cells are functions of the inputs at
+the same timestep, while for memory cells (dfstp, dfrtp, dfxtp) the output Q at time T is a function of inputs
+at time T-1, emulating memory.
+After imposing that 'rst_n' and 'en' make the circuit reset and run correctly, I added a final constraint that
+made z3 search for a solution where the 'success' output would go high for at least one of the timesteps.
+
+Some 15s later, I got a valid input sequence, and as part of the same result I also had the outputs:
+
+I       000000000101010000100000000000010101010000000000001010000001000001000000100000101000010000000100000010000010010001010000000000000000001000000000000000
+success 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111111111111111111111111
+O0      000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101010100100000000000
+O1      000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001001101001101000000000000
+O2      000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011100100000000000000000
+O3      000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011000100000001100000000000
+O4      000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011001101100000000000000
+O5      000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011100010000011100000000000
+O6      000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011101111100000000000000
+O7      000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
+Converting to ascii, it's binary for "(* TWO STARS *)", solving the challenge.
+
+Will likely put the code at https://github.com/dp1/js-asic-puzzle some time after the challenge ends
+
+
+
+#
+
+For example sky130_fd_sc_hd__a31oi_2.magic.lef, a "3-input AND into first input of 2-input NOR", contains
+
+```
+  [...]
+  PIN A1
+    ANTENNAGATEAREA  0.495000 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 1.955000 0.995000 2.665000 1.615000 ;
+        RECT 2.905000 0.995000 3.075000 1.325000 ;
+    END
+  END A1
+  PIN A2
+    ANTENNAGATEAREA  0.495000 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 1.050000 0.995000 1.755000 1.615000 ;
+    END
+  END A2
+  [...]
+```
+

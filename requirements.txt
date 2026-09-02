@@ -1,0 +1,7 @@
+numpy==2.5.2
+pillow==12.3.0
+python-gdsii==0.2.3
+rtree==1.4.1
+shapely==2.1.2
+tqdm==4.70.0
+z3-solver==5.1.0.0
