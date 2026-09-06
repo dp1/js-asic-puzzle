@@ -46,36 +46,3 @@ O6      000000000000000000000000000000000000000000000000000000000000000000000000
 O7      000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
 Converting to ascii, it's binary for "(* TWO STARS *)", solving the challenge.
-
-Will likely put the code at https://github.com/dp1/js-asic-puzzle some time after the challenge ends
-
-
-
-#
-
-For example sky130_fd_sc_hd__a31oi_2.magic.lef, a "3-input AND into first input of 2-input NOR", contains
-
-```
-  [...]
-  PIN A1
-    ANTENNAGATEAREA  0.495000 ;
-    DIRECTION INPUT ;
-    USE SIGNAL ;
-    PORT
-      LAYER li1 ;
-        RECT 1.955000 0.995000 2.665000 1.615000 ;
-        RECT 2.905000 0.995000 3.075000 1.325000 ;
-    END
-  END A1
-  PIN A2
-    ANTENNAGATEAREA  0.495000 ;
-    DIRECTION INPUT ;
-    USE SIGNAL ;
-    PORT
-      LAYER li1 ;
-        RECT 1.050000 0.995000 1.755000 1.615000 ;
-    END
-  END A2
-  [...]
-```
-
